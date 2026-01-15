@@ -23,7 +23,7 @@ jobs:
           git fetch --all --tags
           git checkout master
           git pull origin master
-          git tag "master-${PREV_SPRINT_BRANCH_IDEV}-end"
+          git tag "${PREV_SPRINT_BRANCH_IDEV}-end"
           git push origin --tags
           git checkout "$PR_SPRINT_BRANCH_IDEV" || git checkout -b "$PR_SPRINT_BRANCH_IDEV"
           
