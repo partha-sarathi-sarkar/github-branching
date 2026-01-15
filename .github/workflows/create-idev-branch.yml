@@ -10,6 +10,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+
       - name: Git commands + package.json update
         env:
           PREV_SPRINT_BRANCH_IDEV: ${{ vars.PREV_SPRINT_BRANCH_IDEV }}
@@ -23,36 +28,55 @@ jobs:
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
           
-          # Your original Git commands
+          # Original Git commands
           git fetch --all --tags
           git checkout master
           git pull origin master
           git tag "master-${PREV_SPRINT_BRANCH_IDEV}-end"
           git push origin --tags
           
-          # Switch to new branch (create if needed)
+          # Switch to new branch
           git checkout "$PR_SPRINT_BRANCH_IDEV" || git checkout -b "$PR_SPRINT_BRANCH_IDEV"
           
-          # Update package.json version
+          # Update package.json - CORRECTED METHOD
           if [ -f package.json ]; then
-            node -pe "
-              JSON.parse(fs.readFileSync('package.json', 'utf8'))
-              .replace(/\"version\": \".*?\"/, '\"version\": \"${RELEASE_VERSION_IDEV}\"')
-            " > package-new.json && mv package-new.json package.json
-            echo "Updated package.json version to $RELEASE_VERSION_IDEV"
+            # Backup original
+            cp package.json package.json.backup
+            
+            # Update version using sed (most reliable)
+            sed -i "s/\"version\": \".*\"/\"version\": \"$RELEASE_VERSION_IDEV\"/" package.json
+            
+            # Verify change
+            if grep -q "$RELEASE_VERSION_IDEV" package.json; then
+              echo "package.json updated to $RELEASE_VERSION_IDEV"
+              cat package.json | grep version -A 1
+            else
+              echo "Failed to update package.json"
+              cat package.json | grep version -A 1
+              exit 1
+            fi
           else
             echo "No package.json found"
+            exit 1
           fi
           
-          # Commit package.json changes
+          # Commit and push
           git add package.json
-          git commit -m "chore: update version to $RELEASE_VERSION_IDEV [skip ci]" || echo "No changes to commit"
-          git push origin "$PR_SPRINT_BRANCH_IDEV"
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "chore: bump version to $RELEASE_VERSION_IDEV"
+            git push origin "$PR_SPRINT_BRANCH_IDEV"
+            echo "✅ Committed and pushed package.json update"
+          fi
 
-      - name: Confirm branch and version
+      - name: Verify final state
+        env:
+          PR_SPRINT_BRANCH_IDEV: ${{ vars.PR_SPRINT_BRANCH_IDEV }}
         run: |
-          git branch --show-current
+          git checkout "$PR_SPRINT_BRANCH_IDEV"
+          git log -1 --oneline
           if [ -f package.json ]; then
-            echo "Current version:"
-            grep version package.json || echo "No version field"
+            echo "Final package.json version:"
+            grep version package.json
           fi
