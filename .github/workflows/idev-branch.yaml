@@ -1,0 +1,30 @@
+name: Sprint Branch Automation
+on:
+  pull_request:
+    types: [closed]
+    branches: [master]
+
+jobs:
+  create-next-sprint:
+    if: |
+      github.event.pull_request.merged == true &&
+      github.event.pull_request.head.ref == vars.PREV_SPRINT_BRANCH_IDEV
+    runs-on: ubuntu-latest
+    steps:
+      - name: Extract SPRINT_ID
+        id: extract
+        run: |
+          SPRINT_ID="${{ vars.PREV_SPRINT_BRANCH_IDEV }}"
+          SPRINT_ID=${SPRINT_ID#PREV_SPRINT_BRANCH_}
+          echo "NEW_BRANCH=${ vars.NEW_SPRINT_BRANCH_IDEV }" >> $GITHUB_OUTPUT
+
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+
+      - name: Create new sprint branch
+        run: |
+          git checkout -b "${ vars.NEW_SPRINT_BRANCH_IDEV }" || true
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git push origin "${ vars.NEW_SPRINT_BRANCH_IDEV }"
