@@ -1,0 +1,43 @@
+name: Sprint Branch Workflow
+
+on:
+  workflow_dispatch:
+    inputs:
+      prev_sprint_branch:
+        description: 'Previous sprint branch (overrides secret)'
+        required: false
+      new_branch_name:
+        description: 'New branch name (overrides secret)'
+        required: false
+
+permissions:
+  contents: write
+
+jobs:
+  manage-branches:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for tags
+
+      - name: Execute Git commands
+        env:
+          PREV_SPRINT_BRANCH: ${{ github.event.inputs.prev_sprint_branch || secrets.PREV_SPRINT_BRANCH }}
+          NEW_BRANCH_NAME: ${{ github.event.inputs.new_branch_name || secrets.NEW_BRANCH_NAME }}
+        run: |
+          git fetch
+          git checkout master
+          git pull --all
+          git tag "master-sprint-${PREV_SPRINT_BRANCH}-end"
+          git push --tags
+        #   git checkout "${NEW_BRANCH_NAME}"
+        shell: bash
+
+    #   - name: Verify final branch
+    #     run: |
+    #       git branch --show-current
+    #       echo "Now on new branch: ${NEW_BRANCH_NAME}"
+    #     env:
+    #       NEW_BRANCH_NAME: ${{ github.event.inputs.new_branch_name || secrets.NEW_BRANCH_NAME }}
