@@ -75,6 +75,15 @@ jobs:
             echo "✅ Committed and pushed package.json update"
           fi
 
+      - name: Create SPRINT_END_TAG env variable
+        env:
+          PREV_SPRINT_BRANCH_IDEV: ${{ vars.PREV_SPRINT_BRANCH_IDEV }}
+        run: |
+          SPRINT_END_TAG="${PREV_SPRINT_BRANCH_IDEV}-end"
+          echo "SPRINT_END_TAG=$SPRINT_END_TAG" >> $GITHUB_ENV
+          echo ">>> Set SPRINT_END_TAG=$SPRINT_END_TAG"
+
+          
       - name: Verify final state
         env:
           PR_SPRINT_BRANCH_IDEV: ${{ vars.PR_SPRINT_BRANCH_IDEV }}
