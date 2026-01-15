@@ -9,7 +9,7 @@ permissions:
 jobs:
   manage-branches:
     runs-on: ubuntu-latest
-    environment: sprint-branch-idev  # Variables auto-available as $VAR
+    environment: sprint-branch-idev
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -21,19 +21,25 @@ jobs:
           echo "PREV_SPRINT_BRANCH_IDEV: $PREV_SPRINT_BRANCH_IDEV"
           echo "PR_SPRINT_BRANCH_IDEV: $PR_SPRINT_BRANCH_IDEV"
           if [[ -z "$PREV_SPRINT_BRANCH_IDEV" || -z "$PR_SPRINT_BRANCH_IDEV" ]]; then
-            echo "ERROR: Missing environment variables. Check sprint-branch-idev environment."
+            echo "ERROR: Variables empty. Environment vars auto-inject - no env: block needed."
             exit 1
           fi
 
       - name: Execute Git commands
         run: |
-          git fetch
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git fetch --all --tags
           git checkout master
-          git pull --all
+          git pull origin master
           git tag "master-${PREV_SPRINT_BRANCH_IDEV}-end"
-          git push --tags
-          git checkout "$PR_SPRINT_BRANCH_IDEV"
+          git push origin --tags
+          git checkout "$PR_SPRINT_BRANCH_IDEV" || git checkout -b "$PR_SPRINT_BRANCH_IDEV"
         shell: bash
 
       - name: Confirm branch
-        run: git branch --show-current
+        run: |
+          git branch --show-current
+          echo "Variables used:"
+          echo "PREV: $PREV_SPRINT_BRANCH_IDEV"
+          echo "NEW: $PR_SPRINT_BRANCH_IDEV"
