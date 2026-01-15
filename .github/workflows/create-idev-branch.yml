@@ -1,31 +1,21 @@
 name: Sprint Branch Workflow
-
-on:
-  workflow_dispatch:
-
-permissions:
-  contents: write
+on: workflow_dispatch
+permissions: { contents: write }
 
 jobs:
   manage-branches:
     runs-on: ubuntu-latest
-    environment: sprint-branch-idev
+    environment: sprint_branch_idev  
     steps:
-      - name: Checkout repo
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
 
-      - name: Validate environment variables
+      - name: Debug vars
         run: |
-          echo "PREV_SPRINT_BRANCH_IDEV: $PREV_SPRINT_BRANCH_IDEV"
-          echo "PR_SPRINT_BRANCH_IDEV: $PR_SPRINT_BRANCH_IDEV"
-          if [[ -z "$PREV_SPRINT_BRANCH_IDEV" || -z "$PR_SPRINT_BRANCH_IDEV" ]]; then
-            echo "ERROR: Variables empty. Environment vars auto-inject - no env: block needed."
-            exit 1
-          fi
+          echo "PREV: '$PREV_SPRINT_BRANCH_IDEV'"
+          echo "NEW: '$PR_SPRINT_BRANCH_IDEV'"
 
-      - name: Execute Git commands
+      - name: Git commands
         run: |
           git config user.name "GitHub Actions"
           git config user.email "actions@github.com"
@@ -35,11 +25,3 @@ jobs:
           git tag "master-${PREV_SPRINT_BRANCH_IDEV}-end"
           git push origin --tags
           git checkout "$PR_SPRINT_BRANCH_IDEV" || git checkout -b "$PR_SPRINT_BRANCH_IDEV"
-        shell: bash
-
-      - name: Confirm branch
-        run: |
-          git branch --show-current
-          echo "Variables used:"
-          echo "PREV: $PREV_SPRINT_BRANCH_IDEV"
-          echo "NEW: $PR_SPRINT_BRANCH_IDEV"
