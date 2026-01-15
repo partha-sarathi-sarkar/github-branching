@@ -32,7 +32,12 @@ jobs:
           git fetch --all --tags
           git checkout master
           git pull origin master
-          git tag "master-${PREV_SPRINT_BRANCH_IDEV}-end"
+          # Store tag name as ENVIRONMENT VARIABLE
+          SPRINT_END_TAG="${PREV_SPRINT_BRANCH_IDEV}-end"
+          echo "SPRINT_END_TAG=$SPRINT_END_TAG" >> $GITHUB_ENV
+          echo "Stored env var: SPRINT_END_TAG=$SPRINT_END_TAG"
+          
+          git tag "$SPRINT_END_TAG"
           git push origin --tags
           
           # Switch to new branch
@@ -65,7 +70,7 @@ jobs:
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "chore: bump version to $RELEASE_VERSION_IDEV"
+            git commit -m "Update version Number to: $RELEASE_VERSION_IDEV"
             git push origin "$PR_SPRINT_BRANCH_IDEV"
             echo "✅ Committed and pushed package.json update"
           fi
