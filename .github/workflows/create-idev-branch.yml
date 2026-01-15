@@ -5,23 +5,27 @@ permissions: { contents: write }
 jobs:
   manage-branches:
     runs-on: ubuntu-latest
-    environment: sprint_branch_idev  
     steps:
       - uses: actions/checkout@v4
-        with: { fetch-depth: 0 }
+        with:
+          fetch-depth: 0
 
-      - name: Debug vars
+      - name: Git commands
+        env:
+          PREV_SPRINT_BRANCH_IDEV: ${{ vars.PREV_SPRINT_BRANCH_IDEV }}
+          PR_SPRINT_BRANCH_IDEV: ${{ vars.PR_SPRINT_BRANCH_IDEV }}
         run: |
           echo "PREV: '$PREV_SPRINT_BRANCH_IDEV'"
           echo "NEW: '$PR_SPRINT_BRANCH_IDEV'"
-
-      - name: Git commands
-        run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
+          
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
           git fetch --all --tags
           git checkout master
           git pull origin master
           git tag "master-${PREV_SPRINT_BRANCH_IDEV}-end"
           git push origin --tags
           git checkout "$PR_SPRINT_BRANCH_IDEV" || git checkout -b "$PR_SPRINT_BRANCH_IDEV"
+          
+      - name: Confirm branch
+        run: git branch --show-current
