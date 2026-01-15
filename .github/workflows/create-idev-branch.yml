@@ -26,8 +26,8 @@ jobs:
           git checkout "${PR_SPRINT_BRANCH_IDEV}"
         shell: bash
         env:
-          PPREV_SPRINT_BRANCH_IDEV: ${{ env.PREV_SPRINT_BRANCH_IDEV }}
-          PR_SPRINT_BRANCH_IDEV: ${{ env.PR_SPRINT_BRANCH_IDEV }}
+          PPREV_SPRINT_BRANCH_IDEV: ${{ env.VAR.PREV_SPRINT_BRANCH_IDEV }}
+          PR_SPRINT_BRANCH_IDEV: ${{ env.VAR.PR_SPRINT_BRANCH_IDEV }}
 
       - name: Confirm branch
         run: git branch --show-current
