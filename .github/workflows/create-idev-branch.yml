@@ -10,22 +10,49 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Git commands
+      - name: Git commands + package.json update
         env:
           PREV_SPRINT_BRANCH_IDEV: ${{ vars.PREV_SPRINT_BRANCH_IDEV }}
           PR_SPRINT_BRANCH_IDEV: ${{ vars.PR_SPRINT_BRANCH_IDEV }}
+          RELEASE_VERSION_IDEV: ${{ vars.RELEASE_VERSION_IDEV }}
         run: |
           echo "PREV: '$PREV_SPRINT_BRANCH_IDEV'"
           echo "NEW: '$PR_SPRINT_BRANCH_IDEV'"
+          echo "RELEASE: '$RELEASE_VERSION_IDEV'"
           
           git config --global user.name "GitHub Actions"
           git config --global user.email "actions@github.com"
+          
+          # Your original Git commands
           git fetch --all --tags
           git checkout master
           git pull origin master
-          git tag "${PREV_SPRINT_BRANCH_IDEV}-end"
+          git tag "master-${PREV_SPRINT_BRANCH_IDEV}-end"
           git push origin --tags
+          
+          # Switch to new branch (create if needed)
           git checkout "$PR_SPRINT_BRANCH_IDEV" || git checkout -b "$PR_SPRINT_BRANCH_IDEV"
           
-      - name: Confirm branch
-        run: git branch --show-current
+          # Update package.json version
+          if [ -f package.json ]; then
+            node -pe "
+              JSON.parse(fs.readFileSync('package.json', 'utf8'))
+              .replace(/\"version\": \".*?\"/, '\"version\": \"${RELEASE_VERSION_IDEV}\"')
+            " > package-new.json && mv package-new.json package.json
+            echo "Updated package.json version to $RELEASE_VERSION_IDEV"
+          else
+            echo "No package.json found"
+          fi
+          
+          # Commit package.json changes
+          git add package.json
+          git commit -m "chore: update version to $RELEASE_VERSION_IDEV [skip ci]" || echo "No changes to commit"
+          git push origin "$PR_SPRINT_BRANCH_IDEV"
+
+      - name: Confirm branch and version
+        run: |
+          git branch --show-current
+          if [ -f package.json ]; then
+            echo "Current version:"
+            grep version package.json || echo "No version field"
+          fi
